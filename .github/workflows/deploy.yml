@@ -30,6 +30,17 @@ jobs:
           fi
           echo "✓ wrangler.toml found"
       
+      - name: Check Secrets
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "⚠️  Warning: CLOUDFLARE_API_TOKEN secret is not set"
+            echo "Please add it at: https://github.com/NS0729/haha/settings/secrets/actions"
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "⚠️  Warning: CLOUDFLARE_ACCOUNT_ID secret is not set"
+            echo "Please add it at: https://github.com/NS0729/haha/settings/secrets/actions"
+          fi
+      
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
@@ -38,6 +49,8 @@ jobs:
           command: deploy
           workingDirectory: ./
         continue-on-error: false
+        env:
+          WRANGLER_SEND_METRICS: false
       
       - name: Verify deployment
         run: |

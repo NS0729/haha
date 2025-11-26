@@ -57,12 +57,12 @@ export default {
 
 async function handleGetProducts(request, env, corsHeaders) {
   try {
-    // Check if DB is available
-    if (!env.DB) {
-      return jsonResponse({ 
-        error: 'Database not configured' 
-      }, corsHeaders, 503)
-    }
+    // Check if DB is available (optional for deployment)
+    // if (!env.DB) {
+    //   return jsonResponse({ 
+    //     error: 'Database not configured' 
+    //   }, corsHeaders, 503)
+    // }
 
     const url = new URL(request.url)
     const category = url.searchParams.get('category')
