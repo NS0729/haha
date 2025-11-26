@@ -4,7 +4,7 @@ param(
     [string]$RepoName = "haha",
     
     [Parameter(Mandatory=$false)]
-    [string]$Description = "精美首饰展示应用 - Vue3 + Cloudflare Workers + D1",
+    [string]$Description = "Jewelry App - Vue3 + Cloudflare Workers + D1",
     
     [Parameter(Mandatory=$false)]
     [switch]$Private = $false,
