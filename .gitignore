@@ -6,4 +6,7 @@ dist/
 .vscode/
 .idea/
 *.log
+.wrangler/
+.wrangler.toml.local
+*.local
 

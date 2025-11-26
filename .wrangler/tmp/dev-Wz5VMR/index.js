@@ -54,6 +54,13 @@ var worker_default = {
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
+    if (url.pathname === "/health" || url.pathname === "/api/health") {
+      return jsonResponse({
+        status: "ok",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        service: "jewelry-api"
+      }, corsHeaders);
+    }
     if (url.pathname === "/api/products" && request.method === "GET") {
       return handleGetProducts(request, env, corsHeaders);
     }
@@ -72,19 +79,25 @@ var worker_default = {
       const id = url.pathname.split("/").pop();
       return handleDeleteProduct(id, env, corsHeaders);
     }
-    return new Response("Not Found", {
-      status: 404,
-      headers: corsHeaders
-    });
+    return jsonResponse({
+      error: "Not Found",
+      path: url.pathname,
+      method: request.method
+    }, corsHeaders, 404);
   }
 };
 async function handleGetProducts(request, env, corsHeaders) {
   try {
+    if (!env.DB) {
+      return jsonResponse({
+        error: "Database not configured"
+      }, corsHeaders, 503);
+    }
     const url = new URL(request.url);
     const category = url.searchParams.get("category");
     const search = url.searchParams.get("search");
     const sort = url.searchParams.get("sort") || "newest";
-    const limit = parseInt(url.searchParams.get("limit") || "100");
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "100"), 1e3);
     let query = "SELECT * FROM products WHERE 1=1";
     const params = [];
     if (category) {
@@ -117,23 +130,34 @@ async function handleGetProducts(request, env, corsHeaders) {
       total: result.results?.length || 0
     }, corsHeaders);
   } catch (error) {
+    console.error("Error fetching products:", error);
     return errorResponse(error, corsHeaders);
   }
 }
 __name(handleGetProducts, "handleGetProducts");
 async function handleGetProduct(id, env, corsHeaders) {
   try {
+    if (!env.DB) {
+      return jsonResponse({
+        error: "Database not configured"
+      }, corsHeaders, 503);
+    }
+    if (!id || isNaN(id)) {
+      return jsonResponse({
+        error: "Invalid product ID"
+      }, corsHeaders, 400);
+    }
     const result = await env.DB.prepare(
       "SELECT * FROM products WHERE id = ?"
     ).bind(id).first();
     if (!result) {
-      return new Response(JSON.stringify({ error: "Product not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return jsonResponse({
+        error: "Product not found"
+      }, corsHeaders, 404);
     }
     return jsonResponse({ product: result }, corsHeaders);
   } catch (error) {
+    console.error("Error fetching product:", error);
     return errorResponse(error, corsHeaders);
   }
 }

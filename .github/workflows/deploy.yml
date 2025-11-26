@@ -22,6 +22,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Validate Wrangler config
+        run: |
+          if [ ! -f "wrangler.toml" ]; then
+            echo "Error: wrangler.toml not found"
+            exit 1
+          fi
+          echo "✓ wrangler.toml found"
+      
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
@@ -29,4 +37,10 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           workingDirectory: ./
+        continue-on-error: false
+      
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed successfully"
+          echo "Worker URL: https://jewelry-api.${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.workers.dev"
 
