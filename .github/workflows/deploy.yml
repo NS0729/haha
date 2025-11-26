@@ -28,10 +28,18 @@ jobs:
       - name: Validate Wrangler config
         run: |
           if [ ! -f "wrangler.toml" ]; then
-            echo "Error: wrangler.toml not found"
+            echo "❌ Error: wrangler.toml not found"
             exit 1
           fi
-          echo "✓ wrangler.toml found"
+          echo "✅ wrangler.toml found"
+          echo "Config content:"
+          cat wrangler.toml
+          echo ""
+          echo "Validating config syntax..."
+          # Check for common issues
+          if grep -q "database_id = \"your-database-id-here\"" wrangler.toml; then
+            echo "⚠️  Warning: database_id placeholder found (this is OK, it's commented out)"
+          fi
       
       - name: Check Secrets
         run: |
@@ -51,8 +59,11 @@ jobs:
       
       - name: Verify Wrangler installation
         run: |
-          npx wrangler --version || echo "Wrangler not found in node_modules"
-          npm list wrangler || echo "Wrangler package check failed"
+          echo "Checking Wrangler installation..."
+          npx wrangler --version
+          echo "Wrangler version check passed"
+          npm list wrangler
+          echo "Package check passed"
       
       - name: Validate Worker file
         run: |
@@ -61,6 +72,9 @@ jobs:
             exit 1
           fi
           echo "✅ Worker file exists"
+          echo "File size: $(wc -c < worker/index.js) bytes"
+          echo "First 5 lines:"
+          head -5 worker/index.js
       
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -73,6 +87,22 @@ jobs:
         env:
           WRANGLER_SEND_METRICS: false
           NODE_ENV: production
+          WRANGLER_LOG: debug
+        id: deploy
+      
+      - name: Check deployment result
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Common causes:"
+          echo "1. GitHub Secrets not configured"
+          echo "2. Invalid API Token"
+          echo "3. Invalid Account ID"
+          echo "4. Worker name conflict"
+          echo ""
+          echo "Please check:"
+          echo "- Secrets: https://github.com/NS0729/haha/settings/secrets/actions"
+          echo "- Actions logs for detailed error"
       
       - name: Verify deployment
         run: |
