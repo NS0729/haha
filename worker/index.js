@@ -57,12 +57,14 @@ export default {
 
 async function handleGetProducts(request, env, corsHeaders) {
   try {
-    // Check if DB is available (optional for deployment)
-    // if (!env.DB) {
-    //   return jsonResponse({ 
-    //     error: 'Database not configured' 
-    //   }, corsHeaders, 503)
-    // }
+    // Check if DB is available
+    if (!env.DB) {
+      return jsonResponse({ 
+        products: [],
+        total: 0,
+        message: 'Database not configured. Please configure D1 database to use this feature.'
+      }, corsHeaders)
+    }
 
     const url = new URL(request.url)
     const category = url.searchParams.get('category')
@@ -118,7 +120,7 @@ async function handleGetProduct(id, env, corsHeaders) {
   try {
     if (!env.DB) {
       return jsonResponse({ 
-        error: 'Database not configured' 
+        error: 'Database not configured. Please configure D1 database to use this feature.' 
       }, corsHeaders, 503)
     }
 
@@ -148,16 +150,19 @@ async function handleGetProduct(id, env, corsHeaders) {
 
 async function handleCreateProduct(request, env, corsHeaders) {
   try {
+    if (!env.DB) {
+      return jsonResponse({ 
+        error: 'Database not configured. Please configure D1 database to use this feature.' 
+      }, corsHeaders, 503)
+    }
+
     const body = await request.json()
     const { name, category, price, description, emoji, material, size } = body
 
     if (!name || !category || !price) {
-      return new Response(JSON.stringify({ 
+      return jsonResponse({ 
         error: 'Missing required fields: name, category, price' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      }, corsHeaders, 400)
     }
 
     await env.DB.prepare(
@@ -172,12 +177,19 @@ async function handleCreateProduct(request, env, corsHeaders) {
 
     return jsonResponse({ product: result }, corsHeaders, 201)
   } catch (error) {
+    console.error('Error creating product:', error)
     return errorResponse(error, corsHeaders)
   }
 }
 
 async function handleUpdateProduct(id, request, env, corsHeaders) {
   try {
+    if (!env.DB) {
+      return jsonResponse({ 
+        error: 'Database not configured. Please configure D1 database to use this feature.' 
+      }, corsHeaders, 503)
+    }
+
     const body = await request.json()
     const { name, category, price, description, emoji, material, size } = body
 
@@ -214,10 +226,9 @@ async function handleUpdateProduct(id, request, env, corsHeaders) {
     }
 
     if (updates.length === 0) {
-      return new Response(JSON.stringify({ error: 'No fields to update' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      return jsonResponse({ 
+        error: 'No fields to update' 
+      }, corsHeaders, 400)
     }
 
     updates.push("updated_at = datetime('now')")
@@ -228,10 +239,9 @@ async function handleUpdateProduct(id, request, env, corsHeaders) {
     ).bind(...params).run()
 
     if (updateResult.changes === 0) {
-      return new Response(JSON.stringify({ error: 'Product not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      return jsonResponse({ 
+        error: 'Product not found' 
+      }, corsHeaders, 404)
     }
 
     // Get the updated product
@@ -241,25 +251,32 @@ async function handleUpdateProduct(id, request, env, corsHeaders) {
 
     return jsonResponse({ product: result }, corsHeaders)
   } catch (error) {
+    console.error('Error updating product:', error)
     return errorResponse(error, corsHeaders)
   }
 }
 
 async function handleDeleteProduct(id, env, corsHeaders) {
   try {
+    if (!env.DB) {
+      return jsonResponse({ 
+        error: 'Database not configured. Please configure D1 database to use this feature.' 
+      }, corsHeaders, 503)
+    }
+
     const result = await env.DB.prepare(
       'DELETE FROM products WHERE id = ?'
     ).bind(id).run()
 
     if (result.changes === 0) {
-      return new Response(JSON.stringify({ error: 'Product not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      return jsonResponse({ 
+        error: 'Product not found' 
+      }, corsHeaders, 404)
     }
 
     return jsonResponse({ message: 'Product deleted successfully' }, corsHeaders)
   } catch (error) {
+    console.error('Error deleting product:', error)
     return errorResponse(error, corsHeaders)
   }
 }

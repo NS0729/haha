@@ -2,13 +2,16 @@ name = "jewelry-api"
 main = "worker/index.js"
 compatibility_date = "2024-01-01"
 
-# D1 Database configuration
-# Uncomment and set database_id after creating the database:
-# npx wrangler d1 create jewelry-db
-[[d1_databases]]
-binding = "DB"
-database_name = "jewelry-db"
-# database_id = "your-database-id-here"  # Set this after creating the database
+# D1 Database configuration (optional)
+# To enable D1 database:
+# 1. Create database: npx wrangler d1 create jewelry-db
+# 2. Uncomment the section below and set database_id
+# 3. Initialize: npx wrangler d1 execute jewelry-db --file=./schema.sql
+#
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "jewelry-db"
+# database_id = "your-database-id-here"
 
 [vars]
 ENVIRONMENT = "production"
